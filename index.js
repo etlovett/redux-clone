@@ -8,8 +8,8 @@ Store
   replaceReducer(nextReducer)
 combineReducers(reducers) -> reducer
 bindActionCreators(actionCreatorOrObject, dispatch) -> actionCreatorOrObject
+compose(functions) -> function
 
-compose
 applyMiddleware
 
 type Reducer<S, A> = (state: S, action: A) => S
@@ -80,8 +80,22 @@ function bindActionCreators(actionCreatorOrObject, dispatch) {
   }
 }
 
+function compose(...functions) {
+  if (!functions.length) {
+    return () => undefined;
+  }
+
+  const funcs = functions.reverse();
+  return (...args) => {
+    // Apply each function in turn, turning the result of each into an arguments for the next.
+    const resultArr = funcs.reduce((acc, func) => [func(...acc)], args);
+    return resultArr[0];
+  };
+}
+
 module.exports = {
   createStore,
   combineReducers,
   bindActionCreators,
+  compose,
 };

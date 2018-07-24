@@ -2,6 +2,7 @@ const {
   createStore,
   combineReducers,
   bindActionCreators,
+  compose,
 } = require('./index.js');
 
 describe('index', () => {
@@ -370,6 +371,39 @@ Array [
   ],
 ]
 `);
+    });
+  });
+
+  describe('compose', () => {
+    it('should work when provided no functions', () => {
+      const result = compose();
+
+      expect(result).toBeInstanceOf(Function);
+      expect(result(1)).toBeUndefined();
+    });
+
+    it('should work when provided a single function', () => {
+      const func = (a, b, c) => a + b + c;
+
+      const result = compose(func);
+
+      expect(result).toBeInstanceOf(Function);
+      expect(result(1, 3, 5)).toBe(9);
+    });
+
+    it('should work when provided multiple functions', () => {
+      const func1 = (a, b, c) => a + b + c;
+      const func2 = a => a * 2;
+      const func3 = a => a + 3;
+
+      const result = compose(
+        func3,
+        func2,
+        func1,
+      );
+
+      expect(result).toBeInstanceOf(Function);
+      expect(result(1, 3, 5)).toBe(21);
     });
   });
 });

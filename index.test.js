@@ -11,73 +11,63 @@ describe('index', () => {
       const result2 = createStore(() => {}, null);
 
       expect(result1).not.toBe(result2);
-      expect(result1.getState).toBeDefined();
-      expect(result1.dispatch).toBeDefined();
-      expect(result1.subscribe).toBeDefined();
-      expect(result1.replaceReducer).toBeDefined();
+      expect(result1).toEqual({
+        getState: expect.any(Function),
+        dispatch: expect.any(Function),
+        subscribe: expect.any(Function),
+        replaceReducer: expect.any(Function),
+      });
     });
 
     it('should return a Store instance when not provided arguments', () => {
       const result = createStore();
 
-      expect(result.getState).toBeDefined();
-      expect(result.dispatch).toBeDefined();
-      expect(result.subscribe).toBeDefined();
-      expect(result.replaceReducer).toBeDefined();
-    });
-  });
-
-  describe('Store', () => {
-    let store;
-
-    beforeEach(() => {
-      const reducer = (state, action) => ({
-        ...state,
-        ...action,
-      });
-      const initialState = {
-        initial: 'state',
-      };
-
-      store = createStore(reducer, initialState);
-    });
-
-    describe('initial state', () => {
-      it('should return an undefined initial state without initial state', () => {
-        expect(createStore().getState()).toBeUndefined();
-      });
-
-      it('should return the initial state before any dispatch is run', () => {
-        expect(store.getState()).toMatchInlineSnapshot(`
-Object {
-  "initial": "state",
-}
-`);
+      expect(result).toEqual({
+        getState: expect.any(Function),
+        dispatch: expect.any(Function),
+        subscribe: expect.any(Function),
+        replaceReducer: expect.any(Function),
       });
     });
 
-    describe('basic dispatch of actions', () => {
-      it('should update the state and return the action', () => {
-        const action = {
-          newKey: 'new value',
+    describe('store objects', () => {
+      let store;
+
+      beforeEach(() => {
+        const reducer = (state, action) => ({
+          ...state,
+          ...action,
+        });
+        const initialState = {
+          initial: 'state',
         };
 
-        const result = store.dispatch(action);
+        store = createStore(reducer, initialState);
+      });
 
-        expect(result).toBe(action);
-        expect(store.getState()).toMatchInlineSnapshot(`
+      describe('initial state', () => {
+        it('should return an undefined initial state without initial state', () => {
+          expect(createStore().getState()).toBeUndefined();
+        });
+
+        it('should return the initial state before any dispatch is run', () => {
+          expect(store.getState()).toMatchInlineSnapshot(`
 Object {
   "initial": "state",
-  "newKey": "new value",
 }
 `);
+        });
       });
-    });
 
-    describe('subscriptions', () => {
-      it('should call listeners when dispatch is run, after reducers run', () => {
-        const mockListener1 = jest.fn();
-        const mockListener2 = jest.fn(() => {
+      describe('basic dispatch of actions', () => {
+        it('should update the state and return the action', () => {
+          const action = {
+            newKey: 'new value',
+          };
+
+          const result = store.dispatch(action);
+
+          expect(result).toBe(action);
           expect(store.getState()).toMatchInlineSnapshot(`
 Object {
   "initial": "state",
@@ -85,99 +75,113 @@ Object {
 }
 `);
         });
-        const action = {
-          newKey: 'new value',
-        };
-
-        store.subscribe(mockListener1);
-        store.subscribe(mockListener2);
-
-        store.dispatch(action);
-
-        expect(mockListener1).toHaveBeenCalledTimes(1);
-        expect(mockListener2).toHaveBeenCalledTimes(1);
       });
 
-      it('should not call listeners that have been unsubscribed', () => {
-        const mockListener1 = jest.fn();
-        const mockListener2 = jest.fn();
-        const action = {
-          newKey: 'new value',
-        };
+      describe('subscriptions', () => {
+        it('should call listeners when dispatch is run, after reducers run', () => {
+          const mockListener1 = jest.fn();
+          const mockListener2 = jest.fn(() => {
+            expect(store.getState()).toMatchInlineSnapshot(`
+Object {
+  "initial": "state",
+  "newKey": "new value",
+}
+`);
+          });
+          const action = {
+            newKey: 'new value',
+          };
 
-        store.subscribe(mockListener1);
-        const unsubscribe = store.subscribe(mockListener2);
+          store.subscribe(mockListener1);
+          store.subscribe(mockListener2);
 
-        store.dispatch(action);
+          store.dispatch(action);
 
-        expect(mockListener1).toHaveBeenCalledTimes(1);
-        expect(mockListener2).toHaveBeenCalledTimes(1);
-
-        unsubscribe();
-
-        store.dispatch(action);
-
-        expect(mockListener1).toHaveBeenCalledTimes(2);
-        expect(mockListener2).toHaveBeenCalledTimes(1);
-      });
-
-      it('should not call listeners set up by other listeners', () => {
-        const mockInnerListener = jest.fn();
-        const mockOuterListener = jest.fn(() => {
-          store.subscribe(mockInnerListener);
+          expect(mockListener1).toHaveBeenCalledTimes(1);
+          expect(mockListener2).toHaveBeenCalledTimes(1);
         });
-        const action = {
-          newKey: 'new value',
-        };
 
-        store.subscribe(mockOuterListener);
+        it('should not call listeners that have been unsubscribed', () => {
+          const mockListener1 = jest.fn();
+          const mockListener2 = jest.fn();
+          const action = {
+            newKey: 'new value',
+          };
 
-        store.dispatch(action);
+          store.subscribe(mockListener1);
+          const unsubscribe = store.subscribe(mockListener2);
 
-        expect(mockOuterListener).toHaveBeenCalledTimes(1);
-        expect(mockInnerListener).not.toHaveBeenCalled();
+          store.dispatch(action);
 
-        store.dispatch(action);
+          expect(mockListener1).toHaveBeenCalledTimes(1);
+          expect(mockListener2).toHaveBeenCalledTimes(1);
 
-        expect(mockOuterListener).toHaveBeenCalledTimes(2);
-        expect(mockInnerListener).toHaveBeenCalledTimes(1);
-      });
+          unsubscribe();
 
-      it('should allow dispatch to be called within a listener', () => {
-        const mockListener = jest.fn(() => {
-          const state = store.getState();
-          if (!state.listenerHasRun) {
-            store.dispatch({
-              listenerHasRun: true,
-            });
-          }
+          store.dispatch(action);
+
+          expect(mockListener1).toHaveBeenCalledTimes(2);
+          expect(mockListener2).toHaveBeenCalledTimes(1);
         });
-        const action = {
-          newKey: 'new value',
-        };
 
-        store.subscribe(mockListener);
+        it('should not call listeners set up by other listeners', () => {
+          const mockInnerListener = jest.fn();
+          const mockOuterListener = jest.fn(() => {
+            store.subscribe(mockInnerListener);
+          });
+          const action = {
+            newKey: 'new value',
+          };
 
-        store.dispatch(action);
+          store.subscribe(mockOuterListener);
 
-        expect(mockListener).toHaveBeenCalledTimes(2);
-        expect(store.getState()).toMatchInlineSnapshot(`
+          store.dispatch(action);
+
+          expect(mockOuterListener).toHaveBeenCalledTimes(1);
+          expect(mockInnerListener).not.toHaveBeenCalled();
+
+          store.dispatch(action);
+
+          expect(mockOuterListener).toHaveBeenCalledTimes(2);
+          expect(mockInnerListener).toHaveBeenCalledTimes(1);
+        });
+
+        it('should allow dispatch to be called within a listener', () => {
+          const mockListener = jest.fn(() => {
+            const state = store.getState();
+            if (!state.listenerHasRun) {
+              store.dispatch({
+                listenerHasRun: true,
+              });
+            }
+          });
+          const action = {
+            newKey: 'new value',
+          };
+
+          store.subscribe(mockListener);
+
+          store.dispatch(action);
+
+          expect(mockListener).toHaveBeenCalledTimes(2);
+          expect(store.getState()).toMatchInlineSnapshot(`
 Object {
   "initial": "state",
   "listenerHasRun": true,
   "newKey": "new value",
 }
 `);
+        });
       });
-    });
 
-    describe('replaceReducer', () => {
-      it('should use the new reducer for subsequent actions', function() {
-        store.replaceReducer(() => 3);
+      describe('replaceReducer', () => {
+        it('should use the new reducer for subsequent actions', function() {
+          store.replaceReducer(() => 3);
 
-        store.dispatch({});
+          store.dispatch({});
 
-        expect(store.getState()).toBe(3);
+          expect(store.getState()).toBe(3);
+        });
       });
     });
   });

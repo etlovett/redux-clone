@@ -16,40 +16,36 @@ type Reducer<S, A> = (state: S, action: A) => S
 
 */
 
-class Store {
-  constructor(reducer = () => {}, initialState) {
-    this.reducer = reducer;
-    this.state = initialState;
-    this.listeners = new Set();
-  }
+function createStore(initialReducer, initialState) {
+  let reducer = initialReducer;
+  let state = initialState;
+  const listeners = new Set();
 
-  getState() {
-    return this.state;
-  }
+  return {
+    getState() {
+      return state;
+    },
 
-  dispatch(action) {
-    this.state = this.reducer(this.state, action);
+    dispatch(action) {
+      state = reducer(state, action);
 
-    Array.from(this.listeners).forEach(listener => listener());
+      Array.from(listeners).forEach(listener => listener());
 
-    return action;
-  }
+      return action;
+    },
 
-  subscribe(listener = () => {}) {
-    this.listeners.add(listener);
+    subscribe(listener = () => {}) {
+      listeners.add(listener);
 
-    return () => {
-      this.listeners.delete(listener);
-    };
-  }
+      return () => {
+        listeners.delete(listener);
+      };
+    },
 
-  replaceReducer(nextReducer = () => {}) {
-    this.reducer = nextReducer;
-  }
-}
-
-function createStore(reducer, initialState) {
-  return new Store(reducer, initialState);
+    replaceReducer(nextReducer = () => {}) {
+      reducer = nextReducer;
+    },
+  };
 }
 
 function combineReducers(reducers = {}) {

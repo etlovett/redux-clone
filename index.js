@@ -16,36 +16,41 @@ type Reducer<S, A> = (state: S, action: A) => S
 
 */
 
-function createStore(initialReducer, initialState) {
-  let reducer = initialReducer;
-  let state = initialState;
-  const listeners = new Set();
+const noopEnhancer = storeCreator => storeCreator;
+function createStore(initialReducer, initialState, enhancer = noopEnhancer) {
+  function innerCreateStore(innerInitialReducer, innerInitialState) {
+    let reducer = innerInitialReducer;
+    let state = innerInitialState;
+    const listeners = new Set();
 
-  return {
-    getState() {
-      return state;
-    },
+    return {
+      getState() {
+        return state;
+      },
 
-    dispatch(action) {
-      state = reducer(state, action);
+      dispatch(action) {
+        state = reducer(state, action);
 
-      Array.from(listeners).forEach(listener => listener());
+        Array.from(listeners).forEach(listener => listener());
 
-      return action;
-    },
+        return action;
+      },
 
-    subscribe(listener = () => {}) {
-      listeners.add(listener);
+      subscribe(listener = () => {}) {
+        listeners.add(listener);
 
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+        return () => {
+          listeners.delete(listener);
+        };
+      },
 
-    replaceReducer(nextReducer = () => {}) {
-      reducer = nextReducer;
-    },
-  };
+      replaceReducer(nextReducer = () => {}) {
+        reducer = nextReducer;
+      },
+    };
+  }
+
+  return enhancer(innerCreateStore)(initialReducer, initialState);
 }
 
 function combineReducers(reducers = {}) {

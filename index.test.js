@@ -31,6 +31,20 @@ describe('index', () => {
       });
     });
 
+    it('should apply the enhancer before returning the store', () => {
+      const enhancer = storeCreator => {
+        return (reducer, state) => storeCreator(state => state + 2, state);
+      };
+
+      const result = createStore(state => state + 1, 0, enhancer);
+
+      expect(result.getState()).toBe(0);
+
+      result.dispatch();
+
+      expect(result.getState()).toBe(2);
+    });
+
     describe('store objects', () => {
       let store;
 

@@ -9,7 +9,6 @@ Store
 combineReducers(reducers) -> reducer
 bindActionCreators(actionCreatorOrObject, dispatch) -> actionCreatorOrObject
 compose(functions) -> function
-
 applyMiddleware
 
 type Reducer<S, A> = (state: S, action: A) => S
@@ -66,6 +65,37 @@ function combineReducers(reducers = {}) {
   };
 }
 
+function applyMiddleware(...middlewares) {
+  return createStore => {
+    return (reducer, state) => {
+      const store = createStore(reducer, state);
+      if (!middlewares.length) {
+        return store;
+      }
+
+      const dispatch = middlewares
+        .map(middleware =>
+          middleware({
+            dispatch: store.dispatch,
+            getState: store.getState,
+          }),
+        )
+        .reverse()
+        .reduce(
+          (nextDispatch, middleware) => middleware(nextDispatch),
+          store.dispatch,
+        );
+
+      return {
+        getState: store.getState,
+        dispatch,
+        subscribe: store.subscribe,
+        replaceReducer: store.replaceReducer,
+      };
+    };
+  };
+}
+
 function bindActionCreators(actionCreatorOrObject, dispatch) {
   if (actionCreatorOrObject instanceof Function) {
     return (...args) => {
@@ -101,6 +131,7 @@ function compose(...functions) {
 module.exports = {
   createStore,
   combineReducers,
+  applyMiddleware,
   bindActionCreators,
   compose,
 };

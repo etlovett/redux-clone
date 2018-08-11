@@ -1,6 +1,7 @@
 const {
   createStore,
   combineReducers,
+  applyMiddleware,
   bindActionCreators,
   compose,
 } = require('./index.js');
@@ -275,6 +276,63 @@ Object {
         initialState.mockReducer3,
         action,
       );
+    });
+  });
+
+  describe('applyMiddleware', () => {
+    it('should not modify the store on dispatch when not passed any middleware', () => {
+      const result = createStore(state => state + 1, 0, applyMiddleware());
+
+      expect(result.getState()).toBe(0);
+
+      result.dispatch();
+
+      expect(result.getState()).toBe(1);
+    });
+
+    it('should correctly call a single provided middleware', () => {
+      const doubleDispatchMiddleware = ({ dispatch, getState }) => next => {
+        return () => {
+          dispatch();
+          dispatch();
+        };
+      };
+
+      const result = createStore(
+        state => state + 1,
+        0,
+        applyMiddleware(doubleDispatchMiddleware),
+      );
+
+      expect(result.getState()).toBe(0);
+
+      result.dispatch();
+
+      expect(result.getState()).toBe(2);
+    });
+
+    it('should correctly call multiple provided middlewares', () => {
+      const actionToNumberMiddleware = ({
+        dispatch,
+        getState,
+      }) => next => action => next(action.value);
+      const doubleActionMiddleware = ({
+        dispatch,
+        getState,
+      }) => next => action => next(action * 2);
+
+      const store = createStore(
+        (state, action) => state + action,
+        1,
+        applyMiddleware(actionToNumberMiddleware, doubleActionMiddleware),
+      );
+
+      expect(store.getState()).toBe(1);
+
+      const dispatchResult = store.dispatch({ value: 3 });
+
+      expect(dispatchResult).toBe(6);
+      expect(store.getState()).toBe(7);
     });
   });
 
